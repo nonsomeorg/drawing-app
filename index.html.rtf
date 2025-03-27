@@ -1,0 +1,245 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2821
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 <!-- HTML -->\
+<div id="instructions" class="instructions">Use the canvas to draw with mouse or stylus. Click/tap and hold to create lines.</div>\
+<canvas id="drawingCanvas"></canvas>\
+<div id="submitButton" class="submit-button">submit your drawing</div>\
+<div id="countdown" class="countdown"></div>\
+\
+<style>\
+body, html \{\
+  margin: 0;\
+  padding: 0;\
+  width: 100%;\
+  height: 100%;\
+  overflow: auto;\
+  font-family: Arial, sans-serif;\
+\}\
+\
+#drawingCanvas \{\
+  display: block;\
+  position: absolute;\
+  top: 0;\
+  left: 0;\
+  width: 100vw;\
+  height: 100vh;\
+  background-color: transparent;\
+  cursor: none;\
+  z-index: 1000;\
+\}\
+\
+.instructions \{\
+  font-size: 14px;\
+  color: black;\
+  position: absolute;\
+  top: 10px;\
+  left: 10px;\
+  padding: 10px;\
+  background: rgba(255, 255, 255, 0.8);\
+  z-index: 10;\
+  opacity: 0;\
+  transition: opacity 0.3s ease-in-out;\
+\}\
+\
+#drawingCanvas:hover + .instructions \{\
+  opacity: 1;\
+\}\
+\
+#drawingCanvas:hover \{\
+  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><circle cx="3" cy="3" r="3" fill="black"/></svg>'), auto;\
+\}\
+\
+.submit-button \{\
+  font-family: Arial, sans-serif;\
+  font-size: 14px;\
+  color: black;\
+  position: absolute;\
+  bottom: 20px;\
+  left: 50%;\
+  transform: translateX(-50%);\
+  padding: 10px 20px;\
+  background: rgba(255, 255, 255, 0.8);\
+  cursor: pointer;\
+  z-index: 1001;\
+\}\
+\
+.countdown \{\
+  font-family: Arial, sans-serif;\
+  font-size: 14px;\
+  color: black;\
+  position: absolute;\
+  bottom: 20px;\
+  left: 50%;\
+  transform: translateX(-50%);\
+  padding: 10px 20px;\
+  background: rgba(255, 255, 255, 0.8);\
+  z-index: 1001;\
+  display: none;\
+\}\
+</style>\
+\
+<script>\
+const canvas = document.getElementById('drawingCanvas');\
+const ctx = canvas.getContext('2d');\
+const submitButton = document.getElementById('submitButton');\
+const countdownDiv = document.getElementById('countdown');\
+let drawing = false;\
+let lastX = 0;\
+let lastY = 0;\
+\
+// Set up canvas with proper scaling\
+function setupCanvas() \{\
+  const dpr = window.devicePixelRatio || 1;\
+  const rect = canvas.getBoundingClientRect();\
+  canvas.width = rect.width * dpr;\
+  canvas.height = rect.height * dpr;\
+  ctx.scale(dpr, dpr);\
+  ctx.lineCap = 'round';\
+  ctx.lineJoin = 'round';\
+  ctx.strokeStyle = 'black';\
+  ctx.lineWidth = 2;\
+\}\
+window.addEventListener('resize', setupCanvas);\
+setupCanvas();\
+\
+// Get position for both mouse and touch events\
+function getPosition(event) \{\
+  const rect = canvas.getBoundingClientRect();\
+  if (event.type.startsWith('touch')) \{\
+    const touch = event.touches[0];\
+    return \{\
+      x: touch.clientX - rect.left,\
+      y: touch.clientY - rect.top\
+    \};\
+  \} else \{\
+    return \{\
+      x: event.clientX - rect.left,\
+      y: event.clientY - rect.top\
+    \};\
+  \}\
+\}\
+\
+// Check if input is from stylus\
+function isStylus(event) \{\
+  if (!event.type.startsWith('touch')) return true;\
+  const touch = event.touches[0];\
+  return touch.touchType === 'stylus';\
+\}\
+\
+// Mouse events\
+canvas.addEventListener('mousedown', (event) => \{\
+  drawing = true;\
+  const pos = getPosition(event);\
+  lastX = pos.x;\
+  lastY = pos.y;\
+  ctx.beginPath();\
+  ctx.moveTo(lastX, lastY);\
+\});\
+\
+canvas.addEventListener('mousemove', (event) => \{\
+  if (!drawing) return;\
+  const pos = getPosition(event);\
+  ctx.beginPath();\
+  ctx.moveTo(lastX, lastY);\
+  ctx.lineTo(pos.x, pos.y);\
+  ctx.stroke();\
+  lastX = pos.x;\
+  lastY = pos.y;\
+\});\
+\
+canvas.addEventListener('mouseup', () => \{\
+  drawing = false;\
+\});\
+\
+// Touch events - only for stylus\
+canvas.addEventListener('touchstart', (event) => \{\
+  if (!isStylus(event)) return;\
+  event.preventDefault();\
+  drawing = true;\
+  const pos = getPosition(event);\
+  lastX = pos.x;\
+  lastY = pos.y;\
+  ctx.beginPath();\
+  ctx.moveTo(lastX, lastY);\
+\});\
+\
+canvas.addEventListener('touchmove', (event) => \{\
+  if (!isStylus(event)) return;\
+  event.preventDefault();\
+  if (!drawing) return;\
+  const pos = getPosition(event);\
+  ctx.beginPath();\
+  ctx.moveTo(lastX, lastY);\
+  ctx.lineTo(pos.x, pos.y);\
+  ctx.stroke();\
+  lastX = pos.x;\
+  lastY = pos.y;\
+\});\
+\
+canvas.addEventListener('touchend', (event) => \{\
+  if (!isStylus(event)) return;\
+  event.preventDefault();\
+  drawing = false;\
+\});\
+\
+canvas.addEventListener('touchcancel', (event) => \{\
+  if (!isStylus(event)) return;\
+  event.preventDefault();\
+  drawing = false;\
+\});\
+\
+// Submit functionality with Discord Webhook\
+submitButton.addEventListener('click', () => \{\
+  // Capture the drawing as Base64 Data URL\
+  const drawingData = canvas.toDataURL('image/png');\
+  \
+  // Send to Discord webhook\
+  fetch('https://discord.com/api/webhooks/1354765679978483873/9Okbkf4EW7E-cyLg3Hb9yYimZE0nHFb1X-nyld0oBefNNZtZufjNtv_L_A0icoC71VBA', \{\
+    method: 'POST',\
+    headers: \{\
+      'Content-Type': 'application/json',\
+    \},\
+    body: JSON.stringify(\{\
+      content: 'New drawing submitted!',\
+      embeds: [\{\
+        image: \{\
+          url: drawingData\
+        \}\
+      \}]\
+    \}),\
+  \})\
+    .then(response => \{\
+      if (!response.ok) throw new Error('Webhook failed');\
+      console.log('Drawing sent to Discord');\
+    \})\
+    .catch(error => console.error('Error sending to Discord:', error));\
+\
+  // Hide submit button and show countdown\
+  submitButton.style.display = 'none';\
+  countdownDiv.style.display = 'block';\
+  \
+  let timeLeft = 5;\
+  countdownDiv.textContent = timeLeft;\
+  \
+  // Disable drawing while counting down\
+  drawing = false;\
+  \
+  const countdown = setInterval(() => \{\
+    timeLeft--;\
+    countdownDiv.textContent = timeLeft;\
+    \
+    if (timeLeft <= 0) \{\
+      clearInterval(countdown);\
+      ctx.clearRect(0, 0, canvas.width, canvas.height);\
+      countdownDiv.style.display = 'none';\
+      submitButton.style.display = 'block';\
+    \}\
+  \}, 1000);\
+\});\
+</script>\
+}
